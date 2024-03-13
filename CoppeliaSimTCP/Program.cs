@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-
-// TODO
-// Abrupt megszakított kapcsolat esetén új kapcsolat nem létesíthető
+using System.Threading.Tasks;
 
 namespace SocketExample
 {
@@ -16,7 +13,7 @@ namespace SocketExample
 
         // cím
         private static string ip_address = "127.0.0.1";
-        private static int port_number = 25456;
+        private static int port_number = 25455;
 
         static void Main()
         {
@@ -38,7 +35,7 @@ namespace SocketExample
             }
 
             // Keep console open
-            Console.ReadLine(); ;
+            Console.ReadLine();
         }
 
         private static void ConnectSockets()
@@ -49,8 +46,8 @@ namespace SocketExample
                 int timeout_ms = 100;
                 if (socket.Client.Poll(timeout_ms, SelectMode.SelectWrite))
                 {
-                    BeginReading(socket, readyRead);
-                    Console.WriteLine("Socket csatlakoztatva");
+                    Task.Run(() => BeginReading(socket, readyRead));
+                    Console.WriteLine("Socket connected");
                 }
                 else
                 {
@@ -73,32 +70,41 @@ namespace SocketExample
             }
         }
 
-        private static void BeginReading(TcpClient socket, Action<string> handler)
+        private static async void BeginReading(TcpClient socket, Action<string> handler)
         {
-            NetworkStream stream = socket.GetStream();
-            byte[] buffer = new byte[1024];
-            stream.BeginRead(buffer, 0, buffer.Length, (result) =>
+            try
             {
-                int bytesRead = stream.EndRead(result);
-                if (bytesRead > 0)
+                NetworkStream stream = socket.GetStream();
+                byte[] buffer = new byte[1024];
+
+                while (socket.Connected)
                 {
-                    string data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("Socket olvasása");
-                    handler(data);
-                    BeginReading(socket, handler);  // olvasás folytatása
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead > 0)
+                    {
+                        string data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        Console.WriteLine("Socket reading...");
+                        handler(data);
+                    }
+                    else
+                    {
+                        DisconnectSockets();
+                        Console.WriteLine("Socket disconnected");
+                        break;
+                    }
                 }
-                else
-                {
-                    DisconnectSockets();
-                    Console.WriteLine("Socket lecsatlakoztatása");
-                }
-            }, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading from socket: " + ex.Message);
+                DisconnectSockets();
+            }
         }
 
         // Socket olvasása
         private static void readyRead(string line)
         {
-            Console.WriteLine("Socket üzenet: " + line);
+            Console.WriteLine("Socket message: " + line);
         }
     }
 }
