@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 // TODO
-// Abrupt megszakított kapcsolat esetén új kap
+// Abrupt megszakított kapcsolat esetén új kapcsolat nem létesíthető
 
 namespace SocketExample
 {
@@ -95,11 +95,10 @@ namespace SocketExample
             }, null);
         }
 
-        // Socket 1 olvasása
+        // Socket olvasása
         private static void readyRead(string line)
         {
             Console.WriteLine("Socket üzenet: " + line);
         }
-
     }
 }
