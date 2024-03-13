@@ -11,8 +11,7 @@ namespace SocketExample
 {
     class Program
     {
-        private static TcpClient socket1;
-        private static TcpClient socket2;
+        private static TcpClient socket;
         private static int counter;
 
         // cím
@@ -21,14 +20,13 @@ namespace SocketExample
 
         static void Main()
         {
-            socket1 = new TcpClient();
-            socket2 = new TcpClient();
+            socket = new TcpClient();
             counter = 0;
 
             Console.WriteLine("Press Enter to connect/disconnect...");
             Console.ReadLine();
 
-            if (!socket1.Connected)
+            if (!socket.Connected)
             {
                 ConnectSockets();
                 Console.WriteLine("Connected");
@@ -47,14 +45,12 @@ namespace SocketExample
         {
             try
             {
-                socket1.Connect(ip_address, port_number);
-                socket2.Connect(ip_address, port_number);
+                socket.Connect(ip_address, port_number);
                 int timeout_ms = 100;
-                if (socket1.Client.Poll(timeout_ms, SelectMode.SelectWrite) && socket2.Client.Poll(timeout_ms, SelectMode.SelectWrite))
+                if (socket.Client.Poll(timeout_ms, SelectMode.SelectWrite))
                 {
-                    BeginReading(socket1, readyRead1);
-                    BeginReading(socket2, readyRead2);
-                    Console.WriteLine("Socket1 és Socket2 csatlakoztatva");
+                    BeginReading(socket, readyRead);
+                    Console.WriteLine("Socket csatlakoztatva");
                 }
                 else
                 {
@@ -70,15 +66,10 @@ namespace SocketExample
 
         private static void DisconnectSockets()
         {
-            if (socket1.Connected)
+            if (socket.Connected)
             {
-                socket1.Close();
-                Console.WriteLine("Socket 1 connection closed");
-            }
-            if (socket1.Connected)
-            {
-                socket2.Close();
-                Console.WriteLine("Socket 2 connection closed");
+                socket.Close();
+                Console.WriteLine("Socket connection closed");
             }
         }
 
@@ -105,14 +96,7 @@ namespace SocketExample
         }
 
         // Socket 1 olvasása
-        private static void readyRead1(string line)
-        {
-            Console.WriteLine("Socket üzenet: " + line);
-        }
-
-
-        // Socket 2 olvasása
-        private static void readyRead2(string line)
+        private static void readyRead(string line)
         {
             Console.WriteLine("Socket üzenet: " + line);
         }
